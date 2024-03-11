@@ -1,0 +1,13 @@
+import os
+import shutil
+import os
+
+source_folder = "/Users/Home/Library/CloudStorage/OneDrive-UniversityofBristol/3rd Year/MDM3/Phase C/aerial_60m_pseudotsuga_menziesii"
+destination_folder = "/Users/Home/Library/CloudStorage/OneDrive-UniversityofBristol/3rd Year/MDM3/Phase C/aerial_pseudotsuga_menziesii"
+
+files = os.listdir(source_folder)
+for i, file in enumerate(files):
+    if (i + 1) % 10 == 0:
+        source_file = os.path.join(source_folder, file)
+        destination_file = os.path.join(destination_folder, file)
+        shutil.copyfile(source_file, destination_file)
