@@ -9,3 +9,8 @@
 ## Model 2
 - Same as model 1 mostly
 - Allows changing of classification type with 4 options
+
+## Model 3
+- Uses all data now
+- Now uses proportions of trees in each sample
+- Can set a tolerance to filter out bad data (samples with no clear single genus)
