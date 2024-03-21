@@ -12,3 +12,5 @@ To start we took a stratified sample of 10% of each species aerial image data fr
 
 ## Training Run no. 1
 On this run I will increase the batch size and use an adam optimizer to try and improve the convergence. It looks like further epochs may lead to better performance. I should also look into the possibility of training an encoder to create a 3 channel feature embedding from 4 channel RGB-IR input data.
+
+**need to check the test performance**
