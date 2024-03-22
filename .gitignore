@@ -1,5 +1,6 @@
 #place training data inside here
 data/
+training/aerial_data_training/runs/
 
 
 #default python git ignores#
