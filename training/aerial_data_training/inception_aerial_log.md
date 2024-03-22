@@ -9,8 +9,18 @@ To start we took a stratified sample of 10% of each species aerial image data fr
 - **optimizer**: SGD with lr=0.001, momentum=0.9
 - **batch_size**: 4
 - **best val accuracy**: 0.383117
+**Number 1.5**
+- **batch_size**: 32
+- **best val accuracy**: 0.45
+- **test accuracy**: 0.42
 
-## Training Run no. 1
-On this run I will increase the batch size and use an adam optimizer to try and improve the convergence. It looks like further epochs may lead to better performance. I should also look into the possibility of training an encoder to create a 3 channel feature embedding from 4 channel RGB-IR input data.
+## Training Run no. 2
+On this run I will increase the batch size and tune the SGD hyperparameters (SGD is almost always better for ConvNets) to try and improve the convergence. It looks like further epochs may lead to better performance. I should also look into the possibility of training an encoder to create a 3 channel feature embedding from 4 channel RGB-IR input data. Additionally I should try to initialize the final layer probabilities in line with the training data percentages.
 
-**need to check the test performance**
+Potentially investigate the use of dropout, although it doesnt play nice with normalization and I am not certain if it is appropriate in tandem with the inception-V3 architecture.
+
+
+
+
+# Notes on Inception V3 architecture
+- Before the final linear layer, dropout is implemented with p=0.5 (quite aggressive). Look into this.
