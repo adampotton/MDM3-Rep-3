@@ -15,6 +15,21 @@ To start we took a stratified sample of 10% of each species aerial image data fr
 - **test accuracy**: 0.42
 
 ## Training Run no. 2
+For this run I used a larger batch size and added a 1x1x4 convolutional layer to the start of the network to reduce the 4 channel input images to 3 channels to be used as input to the inception-v3 model
+-  **epochs**: 30
+- **optimizer**: SGD with lr=0.001, momentum=0.9
+- **batch_size**: 32
+- **best val accuracy**: 0.463203
+- **best train accuracy**: 0.4585
+- **best val loss**: 1.8348
+- **best train loss**: 2.3460
+
+
+## TODO: 
+- tune SGD hyperparameters
+- initialize final layer probabilities in line with the training data percentages
+- Determine if the current p=0.5 dropout is optimal
+
 On this run I will increase the batch size and tune the SGD hyperparameters (SGD is almost always better for ConvNets) to try and improve the convergence. It looks like further epochs may lead to better performance. I should also look into the possibility of training an encoder to create a 3 channel feature embedding from 4 channel RGB-IR input data. Additionally I should try to initialize the final layer probabilities in line with the training data percentages.
 
 Potentially investigate the use of dropout, although it doesnt play nice with normalization and I am not certain if it is appropriate in tandem with the inception-V3 architecture.
@@ -24,3 +39,6 @@ Potentially investigate the use of dropout, although it doesnt play nice with no
 
 # Notes on Inception V3 architecture
 - Before the final linear layer, dropout is implemented with p=0.5 (quite aggressive). Look into this.
+
+# Additional Notes:
+- Setting the random seed can be quite important and can lead to a large amount of variation in the training performance. (Sobol Sequences?)
