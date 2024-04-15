@@ -24,7 +24,6 @@ For this run I used a larger batch size and added a 1x1x4 convolutional layer to
 - **best val loss**: 1.8348
 - **best train loss**: 2.3460
 
-
 ## TODO: 
 - tune SGD hyperparameters
 - initialize final layer probabilities in line with the training data percentages
@@ -34,11 +33,50 @@ On this run I will increase the batch size and tune the SGD hyperparameters (SGD
 
 Potentially investigate the use of dropout, although it doesnt play nice with normalization and I am not certain if it is appropriate in tandem with the inception-V3 architecture.
 
-
-
-
 # Notes on Inception V3 architecture
 - Before the final linear layer, dropout is implemented with p=0.5 (quite aggressive). Look into this.
 
 # Additional Notes:
 - Setting the random seed can be quite important and can lead to a large amount of variation in the training performance. (Sobol Sequences?)
+
+**Inception_v3 optimizer (trained on image net)**:
+- SGD
+- batch size = 32
+- Initial training using Momentum
+- best results using RMSProp with momentum decay=0.9 and eps=1
+- learning rate of 0.045
+- decay every two epochs using an exponential rate of 0.94
+- gradient clipping with threshold 2 was also used to stabilize training.
+
+This paper was published before adam's rise to popularity so it seems reasonable to use Adam as the optimizer
+
+**AdamW Hyperparameters**:
+- beta1: exponential decay rate for the first moment. First moment is an exponential moving average of the gradients (commonly beta1 = 0.9)
+- beta2: exponential decay rate for the second moment. The second moment is an exponential moving average of the squared gradients and gives an estimate of the variance in the local gradients. (commonly beta2 = 0.999)
+- Typically the default values of betas work well but are sometimes adjusted.
+- learning rate: learning rate is adaptive for adam but a typical value for the base learning rate is 0.001. Adam is very sensitive to learning rate. 
+- A typical value for the weight decay coefficient is 0.01
+
+**Selected Hyperparameter ranges For Random Search**
+Learning Rate (α):
+[0.0001,0.1]
+Since the dataset is relatively small using larger learning rates is likely to introduce instabilities 
+
+β1 (Exponential Decay for First Moment Estimation):
+Common range: [0.8, 0.999].
+
+β2 (Exponential Decay for Second Moment Estimation):
+Common range: [0.9, 0.999].
+
+Weight Decay:
+[0.0001,0.1]
+penalizes large weights
+
+**Random Search Procedure**
+Infinite loop which trains the model and reports validation loss in the following manner for each loop iteration
+1. Randomly generated a value for each of the hyperparameters (lr,b1,b2,lambda)
+2. Initialize an adamW optimizer with the generated hyperparameters
+3. train the model using the optimizer
+4. Once training appears to reach a minimum terminate and return model performance statistics
+5. write statistics and associated hyperparameters to a new line in a csv or text file 
+6. repeat
