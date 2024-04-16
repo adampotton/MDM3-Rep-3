@@ -78,5 +78,7 @@ Infinite loop which trains the model and reports validation loss in the followin
 2. Initialize an adamW optimizer with the generated hyperparameters
 3. train the model using the optimizer
 4. Once training appears to reach a minimum terminate and return model performance statistics
-5. write statistics and associated hyperparameters to a new line in a csv or text file 
+5. write statistics, number of epochs and associated hyperparameters to a new line in a csv or text file 
 6. repeat
+
+We can implement early stopping during the training of each model to ensure that 1. the models are not overfit and 2. the training does not take an excessively long time
