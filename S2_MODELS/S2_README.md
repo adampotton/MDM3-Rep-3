@@ -14,3 +14,6 @@
 - Uses all data now
 - Now uses proportions of trees in each sample
 - Can set a tolerance to filter out bad data (samples with no clear single genus)
+
+## Model 4
+- Added a way of extratcing logits and their corresponding numbers added
