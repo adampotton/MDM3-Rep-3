@@ -24,6 +24,11 @@ For this run I used a larger batch size and added a 1x1x4 convolutional layer to
 - **best val loss**: 1.8348
 - **best train loss**: 2.3460
 
+## Random Search
+- Looks like there is not a direct correspondence between the loss function and the validation accuracy, perhaps validating that a probabilistic approach is preferable
+- some training runs appear to converge to a minimum in less than 5 epochs and then fail to converge further
+- There was some variation accross 20 samples but I think there is an underlying issue with the data/ loss function
+
 ## TODO: 
 - tune SGD hyperparameters
 - initialize final layer probabilities in line with the training data percentages
