@@ -1,0 +1,2 @@
+"epoch","max_val_acc","min_val_loss","learning_rate","beta1","beta2","weight_decay","batch_size"
+50,0.640749,1.2951,0.0005,0.9,0.995,0.015,32

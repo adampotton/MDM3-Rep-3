@@ -24,6 +24,17 @@ For this run I used a larger batch size and added a 1x1x4 convolutional layer to
 - **best val loss**: 1.8348
 - **best train loss**: 2.3460
 
+## Training Run no. 3
+For this run I used a larger training and val set with images filtered so that they contain >95% one species. This improved training accuracy significantly. Additionally I decided to use the default imagenet normalisation values for the RGB channels and calculate new values for the IR channel (this was also the easiest solution due to memory limitations).
+- **epochs**: 100
+- **optimizer**: AdamW with lr=0.01,betas=[0.8,0.99],w_decay=0.001
+- **batch_size**: 32
+- **best val accuracy**: 0.614642
+- **best train accuracy**: 0.4752
+- **best val loss**: 2.103
+Training was not very stable using these hyperparameters so I decided to run another Random Search with more hyperparameters and on the new data.
+
+
 ## Random Search
 - Looks like there is not a direct correspondence between the loss function and the validation accuracy, perhaps validating that a probabilistic approach is preferable
 - some training runs appear to converge to a minimum in less than 5 epochs and then fail to converge further
