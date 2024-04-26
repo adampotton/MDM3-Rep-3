@@ -3,11 +3,34 @@ from __future__ import division
 import torch
 import torch.nn as nn
 import numpy as np
-from torchvision import models
+from torchvision import models, transforms
 import matplotlib.pyplot as plt
 import time
 from collections import OrderedDict
 import copy
+
+#custom pytorch dataset for aerial dataset. normalization values are based on aerial data and imagenet data
+class CustomDataset(torch.utils.data.Dataset):
+    def __init__(self, images, labels, input_size):
+        self.images = images
+        self.labels = labels
+        self.transform = transforms.Compose([
+                         transforms.ToTensor(),
+                         transforms.Resize(input_size),
+                         transforms.CenterCrop(input_size),
+                         transforms.Normalize([0.485, 0.456, 0.406, 0.3129], [0.229, 0.224, 0.225, 0.125])])
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        image = self.images[idx]
+        label = self.labels[idx]
+
+        if self.transform:
+          image = self.transform(image)
+          
+        return image, label
 
 
 def initialize_inception_model(num_classes, feature_extract, use_pretrained=True, model=None):
@@ -67,92 +90,97 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
     best_acc = 0.0
     final_epoch = num_epochs
 
-    for epoch in range(num_epochs):
-        if early_stop:
-            break
-        else:
-            print('Epoch {}/{}'.format(epoch, num_epochs - 1))
-            print('-' * 10)
+    try:
+        for epoch in range(num_epochs):
+            if early_stop:
+                break
+            else:
+                print('Epoch {}/{}'.format(epoch, num_epochs - 1))
+                print('-' * 10)
 
-            # Each epoch has a training and validation phase
-            for phase in ['train', 'val']:
-                if phase == 'train':
-                    model.train()  # Set model to training mode
-                else:
-                    model.eval()   # Set model to evaluate mode
+                # Each epoch has a training and validation phase
+                for phase in ['train', 'val']:
+                    if phase == 'train':
+                        model.train()  # Set model to training mode
+                    else:
+                        model.eval()   # Set model to evaluate mode
 
-                running_loss = 0.0
-                running_corrects = 0
+                    running_loss = 0.0
+                    running_corrects = 0
 
-                # Iterate over data.
-                for inputs, labels in dataloaders[phase]:
-                    inputs = inputs.to(device)
-                    labels = labels.to(device)
+                    # Iterate over data.
+                    for inputs, labels in dataloaders[phase]:
+                        inputs = inputs.to(device)
+                        labels = labels.to(device)
 
-                    # zero the parameter gradients
-                    optimizer.zero_grad()
+                        # zero the parameter gradients
+                        optimizer.zero_grad()
 
-                    # forward
-                    # track history if only in train
-                    with torch.set_grad_enabled(phase == 'train'):
-                        # Get model outputs and calculate loss
-                        # Special case for inception because in training it has an auxiliary output. In train
-                        #   mode we calculate the loss by summing the final output and the auxiliary output
-                        #   but in testing we only consider the final output.
-                        if is_inception and phase == 'train':
-                            # From https://discuss.pytorch.org/t/how-to-optimize-inception-model-with-auxiliary-classifiers/7958
-                            outputs, aux_outputs = model(inputs)
-                            loss1 = criterion(outputs, labels)
-                            loss2 = criterion(aux_outputs, labels)
-                            loss = loss1 + 0.4*loss2
-                        else:
-                            outputs = model(inputs)
-                            loss = criterion(outputs, labels)
+                        # forward
+                        # track history if only in train
+                        with torch.set_grad_enabled(phase == 'train'):
+                            # Get model outputs and calculate loss
+                            # Special case for inception because in training it has an auxiliary output. In train
+                            #   mode we calculate the loss by summing the final output and the auxiliary output
+                            #   but in testing we only consider the final output.
+                            if is_inception and phase == 'train':
+                                # From https://discuss.pytorch.org/t/how-to-optimize-inception-model-with-auxiliary-classifiers/7958
+                                outputs, aux_outputs = model(inputs)
+                                loss1 = criterion(outputs, labels)
+                                loss2 = criterion(aux_outputs, labels)
+                                loss = loss1 + 0.4*loss2
+                            else:
+                                outputs = model(inputs)
+                                loss = criterion(outputs, labels)
 
-                        _, preds = torch.max(outputs, 1)
+                            _, preds = torch.max(outputs, 1)
 
-                        # backward + optimize only if in training phase
-                        if phase == 'train':
-                            loss.backward()
-                            optimizer.step()
-                            if use_tensorboard:
-                                writer.add_scalar('Training Loss', loss, epoch)
-                                writer.add_scalar('Training Accuracy', torch.sum(preds == labels.data).double() / len(labels), epoch)
-                            
-                    # statistics
-                    running_loss += loss.item() * inputs.size(0)
-                    running_corrects += torch.sum(preds == labels.data)
+                            # backward + optimize only if in training phase
+                            if phase == 'train':
+                                loss.backward()
+                                optimizer.step()
+                                if use_tensorboard:
+                                    writer.add_scalar('Training Loss', loss, epoch)
+                                    writer.add_scalar('Training Accuracy', torch.sum(preds == labels.data).double() / len(labels), epoch)
+                                
+                        # statistics
+                        running_loss += loss.item() * inputs.size(0)
+                        running_corrects += torch.sum(preds == labels.data)
 
-                epoch_loss = running_loss / len(dataloaders[phase].dataset)
-                epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
+                    epoch_loss = running_loss / len(dataloaders[phase].dataset)
+                    epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
 
-                print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
+                    print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
 
-                if phase == 'train':
-                    train_acc_history.append(epoch_acc.item())
-                    train_loss_history.append(epoch_loss)
-                else:
-                    #deep copying the model if its performance has improved
-                    if epoch_acc > best_acc:
-                        best_acc = epoch_acc
-                        best_model_wts = copy.deepcopy(model.state_dict())
-                
-                    #saving validation performance
-                    val_acc_history.append(epoch_acc.item())
-                    val_loss_history.append(epoch_loss)
-                    #early stopping
-                    if early_stopping:
-                        if len(val_loss_history) > patience:
-                            if (np.mean(val_loss_history[-patience:]) < stop_tol) or (np.all(np.array(val_loss_history[-8:]) > min(val_loss_history))):
-                                print("Early stopping activated")
-                                early_stop = True
-                                final_epoch = epoch
-                            
-                    if use_tensorboard:
-                        writer.add_scalar('Validation Accuracy', epoch_acc, epoch)
-                        writer.add_scalar('Validation Loss', epoch_loss, epoch)
-
+                    if phase == 'train':
+                        train_acc_history.append(epoch_acc.item())
+                        train_loss_history.append(epoch_loss)
+                    else:
+                        #deep copying the model if its performance has improved
+                        if epoch_acc > best_acc:
+                            best_acc = epoch_acc
+                            best_model_wts = copy.deepcopy(model.state_dict())
+                    
+                        #saving validation performance
+                        val_acc_history.append(epoch_acc.item())
+                        val_loss_history.append(epoch_loss)
+                        #early stopping
+                        if early_stopping:
+                            if len(val_loss_history) > patience:
+                                if (np.mean(val_loss_history[-patience:]) < stop_tol) or (np.all(np.array(val_loss_history[-8:]) > min(val_loss_history))):
+                                    print("Early stopping activated")
+                                    early_stop = True
+                                    final_epoch = epoch
+                                
+                        if use_tensorboard:
+                            writer.add_scalar('Validation Accuracy', epoch_acc, epoch)
+                            writer.add_scalar('Validation Loss', epoch_loss, epoch)
+            
             print("epoch {} complete".format(epoch))
+    except KeyboardInterrupt:
+        print("Training interrupted")
+        final_epoch = epoch
+        pass
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
